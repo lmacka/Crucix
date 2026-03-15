@@ -69,8 +69,9 @@ async function fetchRSS(url, source) {
     while ((match = itemRegex.exec(xml)) !== null) {
       const block = match[1];
       const title = (block.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/)?.[1] || '').trim();
+      const link = (block.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/)?.[1] || '').trim();
       const pubDate = block.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || '';
-      if (title && title !== source) items.push({ title, date: pubDate, source });
+      if (title && title !== source) items.push({ title, date: pubDate, source, url: link || undefined });
     }
     return items;
   } catch (e) {
@@ -107,6 +108,7 @@ export async function fetchAllNews() {
         title: item.title.substring(0, 100),
         source: item.source,
         date: item.date,
+        url: item.url,
         lat: geo.lat + (Math.random() - 0.5) * 2,
         lon: geo.lon + (Math.random() - 0.5) * 2,
         region: geo.region
@@ -409,17 +411,17 @@ function buildNewsFeed(rssNews, gdeltData, tgUrgent, tgTop) {
   for (const n of rssNews) {
     feed.push({
       headline: n.title, source: n.source, type: 'rss',
-      timestamp: n.date, region: n.region, urgent: false
+      timestamp: n.date, region: n.region, urgent: false, url: n.url
     });
   }
 
   // GDELT top articles
-  for (const title of (gdeltData.allArticles || []).slice(0, 10).map(a => a.title)) {
-    if (title) {
-      const geo = geoTagText(title);
+  for (const a of (gdeltData.allArticles || []).slice(0, 10)) {
+    if (a.title) {
+      const geo = geoTagText(a.title);
       feed.push({
-        headline: title.substring(0, 100), source: 'GDELT', type: 'gdelt',
-        timestamp: new Date().toISOString(), region: geo?.region || 'Global', urgent: false
+        headline: a.title.substring(0, 100), source: 'GDELT', type: 'gdelt',
+        timestamp: new Date().toISOString(), region: geo?.region || 'Global', urgent: false, url: a.url
       });
     }
   }

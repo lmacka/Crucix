@@ -182,6 +182,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .ticker-wrap:hover .ticker-track{animation-play-state:paused}
 @keyframes tickerScroll{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
 .tk-card{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:default;transition:background 0.2s}
+.tk-card.clickable{cursor:pointer}
 .tk-card:hover{background:rgba(100,240,200,0.04)}
 .tk-card.urgent{border-left:2px solid var(--danger)}
 .tk-src{font-family:var(--mono);font-size:8px;letter-spacing:0.08em;text-transform:uppercase;padding:1px 5px;border:1px solid;display:inline-block;margin-right:4px}
@@ -815,7 +816,8 @@ function renderLower(){
   const tickerCards = feed.map(n => {
     const sc = srcClass(n.source);
     const age = n.timestamp ? getAge(n.timestamp) : '';
-    return `<div class="tk-card ${n.urgent?'urgent':''}"><span class="tk-src ${sc}">${(n.source||'NEWS').substring(0,12)}</span><span class="tk-time">${age}</span><div class="tk-head">${cleanText(n.headline||'')}</div></div>`;
+    const urlAttr = n.url ? ` data-url="${String(n.url).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"` : '';
+    return `<div class="tk-card ${n.urgent?'urgent':''} ${n.url?'clickable':''}"${urlAttr}><span class="tk-src ${sc}">${(n.source||'NEWS').substring(0,12)}</span><span class="tk-time">${age}</span><div class="tk-head">${cleanText(n.headline||'')}</div></div>`;
   }).join('');
   const tickerDuration = Math.max(20, feed.length * 2.5);
 
@@ -1046,6 +1048,11 @@ function init(){
   // Close popup on click outside markers
   document.getElementById('mapContainer').addEventListener('click',e=>{
     if(!e.target.closest('.map-popup')) closePopup();
+  });
+  // Open article links from ticker cards
+  document.addEventListener('click',e=>{
+    const card=e.target.closest('.tk-card[data-url]');
+    if(card) window.open(card.dataset.url,'_blank','noopener');
   });
 }
 
